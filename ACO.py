@@ -14,11 +14,11 @@ class AntColony:
 
     Attributes
     ----------
-    alpha : int
+    alpha : float
         Parameter to control the weight of the pheromone
-    beta : int
+    beta : float
         Parameter to control the weight of the heuristic visibility
-    p : int
+    p : float
         Parameter to control the pheromone decay
     m : int
         Number of ants
@@ -41,7 +41,7 @@ class AntColony:
 
     """
     # Attributes
-    def __init__(self, alpha: int, beta: int, p: int, m: int,N: int, iter_max: int, Q=1) -> object:
+    def __init__(self, alpha: float, beta: float, p: float, m: int, N: int, iter_max: int, Q=1) -> object:
         self.alpha = alpha
         self.beta = beta
         self.p = p
