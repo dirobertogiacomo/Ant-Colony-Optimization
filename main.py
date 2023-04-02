@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 alpha = 0.7
 beta = 0.7
-p = 1
+p = 0.6
 m = 5
 N = 5
 iter_max = 1

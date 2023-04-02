@@ -229,8 +229,15 @@ class AntColony:
 
             return probability
         
-        """def update_pheromone(pheromone, delta_t, p):
-            pass"""
+        def compute_path_length(distance, path, start):
+            
+            length = 0
+            j = start
+            for i in np.nditer(path):
+                length += distance[j, i]
+                j = i
+            
+            return length
 
         ######
 
@@ -240,14 +247,14 @@ class AntColony:
         visibility = 1/distance 
         # distance vector
         path_lengths = np.zeros(self.m)
-
+        
         shortest_tour = 99999999999999999
 
         iter = 0
 
         delta_t = np.zeros((self.N, self.N))
 
-        while(iter<self.iter_max):
+        while(iter < self.iter_max):
 
             # for each city
             for city in range(self.N):
@@ -264,6 +271,9 @@ class AntColony:
 
                     # preallocating the path vector
                     path = np.zeros(self.N - 1)
+                    percorso = np.zeros(self.N, int)
+                    percorso[self.N - 1] = city
+                    
 
                     # preallocating delta_t_k
                     delta_t_k = np.zeros((self.N, self.N))
@@ -288,32 +298,38 @@ class AntColony:
 
                         # updating the path distance
                         path[edge] = distance.copy()[current_city, next_city]
+                        percorso[edge] = next_city
 
                         # updating the filters
                         not_allowed_cities[next_city] = True
 
-                        # updating delta_t_k
-                        delta_t_k[current_city, next_city] = self.Q
-                        #delta_t_k[next_city, current_city] = self.Q
-
                         current_city = next_city
                     
+                    # computing delta_t_k
+                    j = city
+                    for i in np.nditer(percorso):
+
+                        delta_t_k[j, i] = 1
+                        delta_t_k[i, j] = 1
+                        
+                        j=i
+
+
                     # computing total path length for the ant
-                    path_lengths[city] = np.sum(path) + distance[current_city, city]
+                    #path_lengths[city] = np.sum(path) + distance[current_city, city]
+                    path_lengths[city] = compute_path_length(distance, percorso, city)
 
                     # updating delta_t
                     delta_t += delta_t_k/path_lengths[ant]
                 
                 # updating the shortest tour
-                if np.min(path_lengths) < shortest_tour:
-                    shortest_tour = np.min(path_lengths)
+                tour = np.min(path_lengths[np.nonzero(path_lengths)])
+                if tour < shortest_tour:
+                    shortest_tour = tour
             
-            # pheromone update
             # computing new pheromone distribution matrix
-###### sbagliato questo calcolo
-            pheromone_distr = ((1-self.p)*pheromone_distr)
-            pheromone_distr += delta_t
-            #pheromone = np.sum(np.prod([pheromone, (1-self.p)]), delta_t)
+            pheromone_distr = ((1-self.p)*pheromone_distr) + delta_t
+
             iter += 1
 
         return shortest_tour, pheromone_distr
