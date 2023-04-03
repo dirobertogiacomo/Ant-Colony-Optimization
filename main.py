@@ -2,17 +2,24 @@ import ACO
 import numpy as np
 import matplotlib.pyplot as plt
 
-alpha = 1
-beta = 1
-p = 1
-m = 10
-N = 3
-iter_max = 10
+alpha = 0.7
+beta = 0.7
+p = 0.6
+m = 5
+N = 5
+iter_max = 1
 pippo = ACO.AntColony(alpha, beta, p, m, N, iter_max)
+distance = np.ones((N,N))
+pheromone, distance, ants_on_city = pippo.initialize(distance)
 
-matrix = np.array([[1,2], [4,7], [7,3]])
-a,b,c = pippo.initialize(matrix)
-print(a,b,c)
+distance = np.array([[999,3,6,2,3],[3,999,5,2,3],[6,5,999,6,4],[2,2,6,999,6],[3,3,4,6,999]])
 
-plt.scatter(matrix[:,0], matrix[:,1])
-plt.show()
+init = (pheromone, distance, ants_on_city)
+
+for i in range(len(init)):
+    print(init[i])
+
+resoult = pippo.loop(init)
+
+for i in range(len(resoult)):
+    print(resoult[i])
