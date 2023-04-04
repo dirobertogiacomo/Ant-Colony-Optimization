@@ -7,17 +7,17 @@ alpha = 0.7
 beta = 0.7
 p = 0.6
 m = 5
-iter_max = 1
+iter_max = 50
+
 
 # definisco la colonia
 antcolony = ACO.AntColony(alpha, beta, p, m)
 # istanzio il problema
-problem = ACO.TCProblem('EXPLICIT', distance)
+problem = ACO.TCProblem(distance, 'EXPLICIT')
 # setto la condizione di stop
 problem.set_stop_condition('ITER', iter_max)
 
 # risolvo il problema
-shortest_tour, shortest_path = problem.solve(antcolony)
+problem.solve(antcolony)
 
-print(shortest_tour, shortest_path)
-
+print(problem.results.shortest_path)

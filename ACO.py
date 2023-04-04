@@ -5,12 +5,13 @@ Giacomo Di Roberto, March 2023, version 1.1
 """
 import numpy as np
 import random as rd
+import time
+import matplotlib.pyplot as plt
 
-# keywords
+# constats
 STOP_CONDITION = 'ITER'
 #STOP_CONDITION = ['ITER', 'TIME', 'CONVERGENCE']
-TYPE_MATRIX = 'EXPLICIT'
-#TYPE_MATRIX = ['EXPLICIT', 'EUC_2D']
+TYPE_MATRIX = ['EXPLICIT', 'EUC_2D']
 
 class AntColony:
     """
@@ -18,16 +19,20 @@ class AntColony:
 
     ...
 
-    Attributes
+    Parameters & Attributes
     ----------
     alpha : float
         Parameter to control the weight of the pheromone
+
     beta : float
         Parameter to control the weight of the heuristic visibility
+
     p : float
         Parameter to control the pheromone decay
+
     m : int
         Number of ants
+
     Q : int, optional
         Arbitrary constant to control tour lenght (default is 1)
 
@@ -45,36 +50,97 @@ class TCProblem:
     """
     Class that define a simmetric Travel Salesman Problem
 
+    ...
+
+    Parameters
+    ----------
+    M : np.ndarray
+        Edge weigths (or distances) matrix. Must be a square matrix
+    
+    type : str
+        Specifies how the edge weights (or distances) are given (according to TSPLIB 95)
+            'EXPLICIT': Weights are listed explicitly in the corresponding section
+            'EUC 2D': Weights are Euclidean distances in 2-D
+
     Attributes
     ----------
     N : int
         Number of cities
-    distance : np.ndarray
-        Cities distance matrix
-    stop_condition
 
-    condition
+    distance : np.ndarray
+        Edge weigths (or distances) matrix
+
+    stop_condition : string
+        Identifies the type of stop condition 
+
+    condition_value : int
 
     pheromone:
 
     ants_on_city:
-
-    shortest_path
-
-    shortest_tour
     
     Methods
     -------
-    set_stop_condition
+    set_stop_condition(condition_type, condition_value)
 
-    solve
+    solve(ant_colony)
 
     """
 
-    def __init__(self, type: str, M: np.ndarray) -> object:
-        if type == TYPE_MATRIX:
-            self.distance = M
+    # subcalsses
+
+    class results:
+        """
+        Subclass to store the results and plot the graphs
+
+        ...
+
+        Attributes
+        ----------
+        shortest_path : list
+            Path of the shortest tour
+
+        shortest_tour : int
+            Length of the shortest tour
+        
+        Methods
+        -------
+        plot()
+
+        """
+
+        def __init__(self) -> None:
+            self.shortest_path = None
+            self.shortest_length = None
+    
+
+    def __init__(self, M: np.ndarray, type: str) -> object:
+
+        def compute_lenght(N: int, M: np.ndarray):
+            """
+            Computes the Euclidian distance between the cities
+
+            """
+
+            distance = np.zeros((N,N), int) # preallocating the matrix
+
+            # computing the Euclidian distance
+            # xd = x[i] - x[j];
+            # yd = y[i] - y[j];
+            # dij = nint( sqrt( xd*xd + yd*yd) );
+            for i in range(N):
+                m = np.power(np.subtract(M[i,:], M), 2)
+                m = np.round(np.sqrt(np.sum(m,axis=1)))
+                distance[i, :] = m
+            
+            return distance
+        
+        if type in TYPE_MATRIX:
             self.N = M.shape[0]
+            if type == 'EUC_2D':
+                self.distance = compute_lenght(self.N,M)
+            else:
+                self.distance = M
         else:
             raise NameError
         
@@ -87,15 +153,15 @@ class TCProblem:
         self.shortest_tour = None
             
     
-    def set_stop_condition(self, condition: str, n: int):
+    def set_stop_condition(self, condition_type: str, condition_value: int):
         """
         Set the stop condition
 
         """
 
-        if STOP_CONDITION == condition:
-            self.stop_condition = condition
-            self.condition = n
+        if STOP_CONDITION == condition_type:
+            self.stop_condition = condition_type
+            self.condition_value = condition_value
         else:
             raise NameError
     
@@ -103,14 +169,24 @@ class TCProblem:
         """
         Solve the problem
 
+        ...
+
+        Parameters
+        ----------
+        Ants : AntColony object 
+            
         """
+
+        # 
 
         def initialize():
             """
             Initializes the algorithm
 
             """
-        
+
+            # 
+
             def compute_pheromone(N: int):
                 """
                 Generates the initial matrix of the pheromone distribution
@@ -129,17 +205,20 @@ class TCProblem:
 
                 """
 
-                # preallocating the matrix, including one ant for each city
+                # preallocating the array, including one ant for each city
                 ants_on_city = np.ones(N, int)
                 if m != N:
                     # randomly assigning the remaining ants
                     remaining_ants = m-N
-                    for i in range(N):
-                        a = rd.randint(0,remaining_ants)
-                        ants_on_city[i] += a
-                        remaining_ants -= a
+                    while remaining_ants > 0:
+                        for i in range(N):
+                            a = rd.randint(0,remaining_ants)
+                            ants_on_city[i] += a
+                            remaining_ants -= a
 
                 return ants_on_city
+            
+            # body of initialize()
             
             # computing the initial pheromone distribution matrix
             pheromone = compute_pheromone(self.N)
@@ -147,10 +226,16 @@ class TCProblem:
             # assigning the ants in the cities
             ants_on_city = ants_position(Ants.m, self.N)
 
+            # saving the results
             self.pheromone = pheromone
             self.ants_on_city = ants_on_city
-        
+
         def loop():
+            """
+            Loop of the algorithm
+
+            """
+            # 
 
             def compute_probability(visibility: np.ndarray, pheromone: np.ndarray, alpha: float, beta: float):
                 """
@@ -181,6 +266,10 @@ class TCProblem:
                 return probability
             
             def compute_path_length(distance, path, start):
+                """
+                Compute the length of the given path with the given distance matrix
+
+                """
                 
                 length = 0
                 j = start
@@ -190,14 +279,21 @@ class TCProblem:
                 
                 return length
             
-            def check_stop_condition(N:int):
-                if N < self.condition:
+            def check_stop_condition(N: int):
+                """
+                Check if the stop condition of the problem is True
+
+                """
+
+                if N < self.condition_value:
                     condizione = True
                 else:
                     condizione = False
                 return condizione
 
-            ######
+            # body loop()
+
+            start = time.time()
 
             # initialising the variables
             visibility = 1/self.distance 
@@ -286,20 +382,25 @@ class TCProblem:
                 # computing new pheromone distribution matrix
                 self.pheromone = ((1-Ants.p)*self.pheromone) + delta_t
 
-                # checking stop condition
+                # updating the flags
                 iter += 1
+                global stop
+                stop = time.time() - start
+
+                # checking stop condition
                 condizione = check_stop_condition(iter)
             
-            self.shortest_path = shortest_path
-            self.shortest_tour = shortest_tour 
+            # saving the results
+            self.results.shortest_path = shortest_path
+            self.results.shortest_tour = shortest_tour
         
-        #############################################
+        # body of solve()
 
         # initializing the algorithm
         initialize()
 
         # loop
         loop()
-        
-        return self.shortest_tour, self.shortest_path
+
+
     
