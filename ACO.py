@@ -13,39 +13,6 @@ STOP_CONDITION = 'ITER'
 #STOP_CONDITION = ['ITER', 'TIME', 'CONVERGENCE']
 TYPE_MATRIX = ['EXPLICIT', 'EUC_2D']
 
-class AntColony:
-    """
-    Class that define an ant colony
-
-    ...
-
-    Parameters & Attributes
-    ----------
-    alpha : float
-        Parameter to control the weight of the pheromone
-
-    beta : float
-        Parameter to control the weight of the heuristic visibility
-
-    p : float
-        Parameter to control the pheromone decay
-
-    m : int
-        Number of ants
-
-    Q : int, optional
-        Arbitrary constant to control tour lenght (default is 1)
-
-    """
-
-    def __init__(self, alpha: float, beta: float, p: float, m: int, Q=1) -> object:
-        self.alpha = alpha
-        self.beta = beta
-        self.p = p
-        self.m = m
-        self.Q = Q
-
-
 class TCProblem:
     """
     Class that define a simmetric Travel Salesman Problem
@@ -70,10 +37,10 @@ class TCProblem:
     distance : np.ndarray
         Edge weigths (or distances) matrix
 
-    stop_condition : string
+    stopCondition : string
         Identifies the type of stop condition 
 
-    condition_value : int
+    stopConditionValue : int
 
     pheromone:
 
@@ -88,6 +55,42 @@ class TCProblem:
     """
 
     # subcalsses
+    
+    class antColony:
+        """
+        Subclass that define an ant colony
+
+        ...
+
+        Parameters & Attributes
+        ----------
+        alpha : float
+            Parameter to control the weight of the pheromone
+
+        beta : float
+            Parameter to control the weight of the heuristic visibility
+
+        p : float
+            Parameter to control the pheromone decay
+
+        m : int
+            Number of ants
+
+        Q : int, optional
+            Arbitrary constant to control tour lenght (default is 1)
+
+        """
+
+        def __init__(self) -> None:
+            pass
+        
+        def __call__(self, alpha: float, beta: float, p: float, m: int, Q=1) -> None:
+            self.alpha = alpha
+            self.beta = beta
+            self.p = p
+            self.m = m
+            self.Q = Q
+        
 
     class results:
         """
@@ -97,11 +100,17 @@ class TCProblem:
 
         Attributes
         ----------
-        shortest_path : list
+        shortestPath : list
             Path of the shortest tour
 
-        shortest_tour : int
+        shortestTour : int
             Length of the shortest tour
+        
+        iter : int
+            Number of iteration
+        
+        computationTime : float
+            Computation time of the algorithm
         
         Methods
         -------
@@ -110,13 +119,16 @@ class TCProblem:
         """
 
         def __init__(self) -> None:
-            self.shortest_path = None
-            self.shortest_length = None
+            self.shortestPath = None
+            self.shortestTour = None
+            self.iter = None
+            self.computationTime = None
     
+    # 
 
-    def __init__(self, M: np.ndarray, type: str) -> object:
+    def __init__(self, M: np.ndarray, type: str):
 
-        def compute_lenght(N: int, M: np.ndarray):
+        def compute_distance(N: int, Matrix: np.ndarray):
             """
             Computes the Euclidian distance between the cities
 
@@ -129,7 +141,7 @@ class TCProblem:
             # yd = y[i] - y[j];
             # dij = nint( sqrt( xd*xd + yd*yd) );
             for i in range(N):
-                m = np.power(np.subtract(M[i,:], M), 2)
+                m = np.power(np.subtract(Matrix[i,:], Matrix), 2)
                 m = np.round(np.sqrt(np.sum(m,axis=1)))
                 distance[i, :] = m
             
@@ -138,21 +150,20 @@ class TCProblem:
         if type in TYPE_MATRIX:
             self.N = M.shape[0]
             if type == 'EUC_2D':
-                self.distance = compute_lenght(self.N,M)
+                self.distance = compute_distance(self.N, M)
             else:
                 self.distance = M
         else:
             raise NameError
         
         # initialising the other attributes
-        self.stop_condition = None
-        self.condition = None
+        self.stopCondition = None
+        self.stopConditionValue = None
         self.pheromone = None
         self.ants_on_city = None
-        self.shortest_path = None
-        self.shortest_tour = None
+        self.antColony = self.antColony()
+        self.results = self.results()
             
-    
     def set_stop_condition(self, condition_type: str, condition_value: int):
         """
         Set the stop condition
@@ -160,12 +171,12 @@ class TCProblem:
         """
 
         if STOP_CONDITION == condition_type:
-            self.stop_condition = condition_type
-            self.condition_value = condition_value
+            self.stopCondition = condition_type
+            self.stopConditionValue = condition_value
         else:
             raise NameError
     
-    def solve(self, Ants: AntColony):
+    def solve(self):
         """
         Solve the problem
 
@@ -187,23 +198,26 @@ class TCProblem:
 
             # 
 
-            def compute_pheromone(N: int):
+            def compute_pheromone():
                 """
                 Generates the initial matrix of the pheromone distribution
                 
                 """
                 
-                di = np.diag_indices(N)
-                pheromone = np.ones((N,N))
+                di = np.diag_indices(self.N)
+                pheromone = np.ones((self.N, self.N))
                 pheromone[di] = 0
 
                 return pheromone
 
-            def ants_position(m: int, N: int):
+            def ants_position():
                 """
                 Returns an array containing the number of ants for each city
 
                 """
+
+                N = self.N
+                m = self.antColony.m
 
                 # preallocating the array, including one ant for each city
                 ants_on_city = np.ones(N, int)
@@ -212,7 +226,7 @@ class TCProblem:
                     remaining_ants = m-N
                     while remaining_ants > 0:
                         for i in range(N):
-                            a = rd.randint(0,remaining_ants)
+                            a = rd.randint(0, remaining_ants)
                             ants_on_city[i] += a
                             remaining_ants -= a
 
@@ -221,10 +235,10 @@ class TCProblem:
             # body of initialize()
             
             # computing the initial pheromone distribution matrix
-            pheromone = compute_pheromone(self.N)
+            pheromone = compute_pheromone()
 
             # assigning the ants in the cities
-            ants_on_city = ants_position(Ants.m, self.N)
+            ants_on_city = ants_position()
 
             # saving the results
             self.pheromone = pheromone
@@ -237,11 +251,14 @@ class TCProblem:
             """
             # 
 
-            def compute_probability(visibility: np.ndarray, pheromone: np.ndarray, alpha: float, beta: float):
+            def compute_probability(visibility: np.ndarray, pheromone: np.ndarray):
                 """
                 Compute the probability array for one edge
 
                 """
+
+                alpha = self.antColony.alpha
+                beta = self.antColony.beta
 
                 # checking parameters
                 if (visibility.ndim != 1) or (pheromone.ndim != 1):
@@ -265,16 +282,16 @@ class TCProblem:
 
                 return probability
             
-            def compute_path_length(distance, path, start):
+            def compute_path_length(path, start):
                 """
-                Compute the length of the given path with the given distance matrix
+                Compute the length of the given path
 
                 """
                 
                 length = 0
                 j = start
                 for i in np.nditer(path):
-                    length += distance[j, i]
+                    length += self.distance[j, i]
                     j = i
                 
                 return length
@@ -285,11 +302,10 @@ class TCProblem:
 
                 """
 
-                if N < self.condition_value:
-                    condizione = True
+                if N < self.stopConditionValue:
+                    return True
                 else:
-                    condizione = False
-                return condizione
+                    return False 
 
             # body loop()
 
@@ -298,18 +314,18 @@ class TCProblem:
             # initialising the variables
             visibility = 1/self.distance 
 
-            path_lengths = np.zeros(Ants.m)
+            path_lengths = np.zeros(self.antColony.m)
             
-            shortest_tour = 99999999999999999
-            shortest_path = np.zeros(self.N, int)
+            shortestTour = 99999999999999999
+            shortestPath = np.zeros(self.N, int)
 
-            iter = 0
+            self.results.iter = 0
 
-            delta_t = np.zeros((self.N, self.N))
+            total_pheromoneDrop = np.zeros((self.N, self.N))
 
-            condizione = True
+            isTrue = True
 
-            while(condizione):
+            while(isTrue):
 
                 # for each city
                 for city in range(self.N):
@@ -325,13 +341,12 @@ class TCProblem:
                         not_allowed_cities[city] = True
 
                         # preallocating the path vector
-                        path = np.zeros(self.N - 1)
-                        percorso = np.zeros(self.N, int)
-                        percorso[self.N - 1] = city
+                        path = np.zeros(self.N, int)
+                        path[self.N - 1] = city
                         
 
-                        # preallocating delta_t_k
-                        delta_t_k = np.zeros((self.N, self.N))
+                        # preallocating ant_pheromoneDrop
+                        ant_pheromoneDrop = np.zeros((self.N, self.N))
                         
                         # initialising the path
                         current_city = city
@@ -346,53 +361,52 @@ class TCProblem:
                             edge_pheromone[not_allowed_cities] = 0
 
                             # compute probability
-                            probability = compute_probability(edge_visibility, edge_pheromone, Ants.alpha, Ants.beta)
+                            probability = compute_probability(edge_visibility, edge_pheromone)
 
                             # choosing the best city
                             next_city = np.argmax(probability)
 
                             # updating the path 
-                            path[edge] = self.distance.copy()[current_city, next_city]
-                            percorso[edge] = next_city
+                            path[edge] = next_city
 
                             # updating the filters
                             not_allowed_cities[next_city] = True
 
                             current_city = next_city
                         
-                        # computing delta_t_k
+                        # computing ant_pheromoneDrop
                         j = city
-                        for i in np.nditer(percorso):
-                            delta_t_k[j, i] = 1
-                            delta_t_k[i, j] = 1
+                        for i in np.nditer(path):
+                            ant_pheromoneDrop[j, i] = 1
+                            ant_pheromoneDrop[i, j] = 1
                             j=i
 
                         # computing total path length for the ant
-                        path_lengths[city] = compute_path_length(self.distance, percorso, city)
+                        path_lengths[city] = compute_path_length(path, city)
 
-                        # updating delta_t
-                        delta_t += delta_t_k/path_lengths[ant]
+                        # updating total_pheromoneDrop
+                        total_pheromoneDrop += ant_pheromoneDrop/path_lengths[ant]
                     
                     # updating the shortest tour
                     tour = np.min(path_lengths[np.nonzero(path_lengths)])
-                    if tour < shortest_tour:
-                        shortest_tour = tour
-                        shortest_path = percorso
+                    if tour < shortestTour:
+                        shortestTour = tour
+                        shortestPath = path
                 
                 # computing new pheromone distribution matrix
-                self.pheromone = ((1-Ants.p)*self.pheromone) + delta_t
+                self.pheromone = ((1-self.antColony.p)*self.pheromone) + total_pheromoneDrop
 
                 # updating the flags
-                iter += 1
+                self.results.iter += 1
                 global stop
                 stop = time.time() - start
 
                 # checking stop condition
-                condizione = check_stop_condition(iter)
+                isTrue = check_stop_condition(self.results.iter)
             
             # saving the results
-            self.results.shortest_path = shortest_path
-            self.results.shortest_tour = shortest_tour
+            self.results.shortestPath = shortestPath
+            self.results.shortestTour = shortestTour
         
         # body of solve()
 
