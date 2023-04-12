@@ -9,6 +9,7 @@ beta = 0.7
 p = 0.6
 m = 5
 iter_max = 50
+time = 0.5
 
 
 # istanzio il problema
@@ -18,7 +19,7 @@ problem = ACO.TCProblem(distance, 'EXPLICIT')
 problem.antColony(alpha, beta, p, m)
 
 # setto la condizione di stop
-problem.set_stop_condition('ITER', iter_max)
+problem.set_stop_condition('TIME', time)
 
 # risolvo il problema
 problem.solve()

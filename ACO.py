@@ -9,8 +9,7 @@ import time
 import matplotlib.pyplot as plt
 
 # constats
-STOP_CONDITION = 'ITER'
-#STOP_CONDITION = ['ITER', 'TIME', 'CONVERGENCE']
+STOP_CONDITION = ['ITER', 'TIME']
 TYPE_MATRIX = ['EXPLICIT', 'EUC_2D']
 
 class TCProblem:
@@ -56,41 +55,41 @@ class TCProblem:
 
     # subcalsses
     
-    class antColony:
-        """
-        Subclass that define an ant colony
+    #class antColony:
+    """
+    Subclass that define an ant colony
 
-        ...
+    ...
 
-        Parameters & Attributes
-        ----------
-        alpha : float
-            Parameter to control the weight of the pheromone
+    Parameters & Attributes
+    ----------
+    alpha : float
+        Parameter to control the weight of the pheromone
 
-        beta : float
-            Parameter to control the weight of the heuristic visibility
+    beta : float
+        Parameter to control the weight of the heuristic visibility
 
-        p : float
-            Parameter to control the pheromone decay
+    p : float
+        Parameter to control the pheromone decay
 
-        m : int
-            Number of ants
+    m : int
+        Number of ants
 
-        Q : int, optional
-            Arbitrary constant to control tour lenght (default is 1)
+    Q : int, optional
+        Arbitrary constant to control tour lenght (default is 1)
 
-        """
+    """
 
-        def __init__(self) -> None:
-            pass
-        
-        def __call__(self, alpha: float, beta: float, p: float, m: int, Q=1) -> None:
-            self.alpha = alpha
-            self.beta = beta
-            self.p = p
-            self.m = m
-            self.Q = Q
-        
+    """def __init__(self) -> None:
+        pass
+
+    def __call__(self, alpha: float, beta: float, p: float, m: int, Q=1) -> None:
+        self.alpha = alpha
+        self.beta = beta
+        self.p = p
+        self.m = m
+        self.Q = Q"""
+
 
     class results:
         """
@@ -145,6 +144,9 @@ class TCProblem:
                 m = np.round(np.sqrt(np.sum(m,axis=1)))
                 distance[i, :] = m
             
+            di = np.diag_indices(N)
+            distance[di] = 1000000
+            
             return distance
         
         if type in TYPE_MATRIX:
@@ -161,8 +163,14 @@ class TCProblem:
         self.stopConditionValue = None
         self.pheromone = None
         self.ants_on_city = None
-        self.antColony = self.antColony()
+        #self.antColony = self.antColony()
         self.results = self.results()
+        self.alpha = None
+        self.beta = None
+        self.p = None
+        self.m = None
+        self.Q = None
+
             
     def set_stop_condition(self, condition_type: str, condition_value: int):
         """
@@ -170,11 +178,41 @@ class TCProblem:
 
         """
 
-        if STOP_CONDITION == condition_type:
+        if condition_type in STOP_CONDITION :
             self.stopCondition = condition_type
             self.stopConditionValue = condition_value
         else:
             raise NameError
+    
+    def antColony(self, alpha: float, beta: float, p: float, m: int, Q=1) -> None:
+        """
+        Define an ant colony
+
+        Parameters
+        ----------
+        alpha : float
+            Parameter to control the weight of the pheromone
+
+        beta : float
+            Parameter to control the weight of the heuristic visibility
+
+        p : float
+            Parameter to control the pheromone decay
+
+        m : int
+            Number of ants
+
+        Q : int, optional
+            Arbitrary constant to control tour lenght (default is 1)
+
+        """
+
+        self.alpha = alpha
+        self.beta = beta
+        self.p = p
+        self.m = m
+        self.Q = Q
+
     
     def solve(self):
         """
@@ -217,7 +255,7 @@ class TCProblem:
                 """
 
                 N = self.N
-                m = self.antColony.m
+                m = self.m
 
                 # preallocating the array, including one ant for each city
                 ants_on_city = np.ones(N, int)
@@ -257,8 +295,8 @@ class TCProblem:
 
                 """
 
-                alpha = self.antColony.alpha
-                beta = self.antColony.beta
+                alpha = self.alpha
+                beta = self.beta
 
                 # checking parameters
                 if (visibility.ndim != 1) or (pheromone.ndim != 1):
@@ -296,16 +334,31 @@ class TCProblem:
                 
                 return length
             
-            def check_stop_condition(N: int):
+            def check_stop_condition():
                 """
                 Check if the stop condition of the problem is True
 
                 """
 
-                if N < self.stopConditionValue:
+                if self.stopCondition == 'ITER':
+                    if self.results.iter < self.stopConditionValue:
+                        return True
+                    else:
+                        return False
+                    
+                if self.stopCondition  == 'TIME' :
+                    if self.results.computationTime < self.stopConditionValue:
+                        return True
+                    else:
+                        return False
+
+                
+
+
+                """if N < self.stopConditionValue:
                     return True
                 else:
-                    return False 
+                    return False """
 
             # body loop()
 
@@ -314,7 +367,7 @@ class TCProblem:
             # initialising the variables
             visibility = 1/self.distance 
 
-            path_lengths = np.zeros(self.antColony.m)
+            path_lengths = np.zeros(self.m)
             
             shortestTour = 99999999999999999
             shortestPath = np.zeros(self.N, int)
@@ -382,7 +435,7 @@ class TCProblem:
                             j=i
 
                         # computing total path length for the ant
-                        path_lengths[city] = compute_path_length(path, city)
+                        path_lengths[ant] = compute_path_length(path, city)
 
                         # updating total_pheromoneDrop
                         total_pheromoneDrop += ant_pheromoneDrop/path_lengths[ant]
@@ -394,15 +447,14 @@ class TCProblem:
                         shortestPath = path
                 
                 # computing new pheromone distribution matrix
-                self.pheromone = ((1-self.antColony.p)*self.pheromone) + total_pheromoneDrop
+                self.pheromone = ((1-self.p)*self.pheromone) + total_pheromoneDrop
 
                 # updating the flags
                 self.results.iter += 1
-                global stop
-                stop = time.time() - start
+                self.results.computationTime = time.time() - start
 
                 # checking stop condition
-                isTrue = check_stop_condition(self.results.iter)
+                isTrue = check_stop_condition()
             
             # saving the results
             self.results.shortestPath = shortestPath
