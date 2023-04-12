@@ -127,13 +127,16 @@ class TCProblem:
 
     def __init__(self, M: np.ndarray, type: str):
 
+        #
+
         def compute_distance(N: int, Matrix: np.ndarray):
             """
             Computes the Euclidian distance between the cities
 
             """
 
-            distance = np.zeros((N,N), int) # preallocating the matrix
+            # preallocating the matrix
+            distance = np.zeros((N,N), int) 
 
             # computing the Euclidian distance
             # xd = x[i] - x[j];
@@ -144,11 +147,14 @@ class TCProblem:
                 m = np.round(np.sqrt(np.sum(m,axis=1)))
                 distance[i, :] = m
             
+            # avoiding divisions by zero
             di = np.diag_indices(N)
             distance[di] = 1000000
             
             return distance
         
+        #
+
         if type in TYPE_MATRIX:
             self.N = M.shape[0]
             if type == 'EUC_2D':
@@ -257,7 +263,7 @@ class TCProblem:
                 N = self.N
                 m = self.m
 
-                # preallocating the array, including one ant for each city
+                """# preallocating the array, including one ant for each city
                 ants_on_city = np.ones(N, int)
                 if m != N:
                     # randomly assigning the remaining ants
@@ -266,7 +272,19 @@ class TCProblem:
                         for i in range(N):
                             a = rd.randint(0, remaining_ants)
                             ants_on_city[i] += a
-                            remaining_ants -= a
+                            remaining_ants -= a"""
+                
+                # randomly assign the ants on the cities
+                ants_on_city = np.zeros(N, int)
+
+                remaining_ants = m
+                while remaining_ants > 0:
+                    # randomly choise a city
+                    city = rd.choice(range(N))
+                    # assign to this city a random number of ants
+                    a = rd.randint(0, remaining_ants)
+                    ants_on_city[city] += a
+                    remaining_ants -= a
 
                 return ants_on_city
             
@@ -352,22 +370,16 @@ class TCProblem:
                     else:
                         return False
 
-                
-
-
-                """if N < self.stopConditionValue:
-                    return True
-                else:
-                    return False """
-
             # body loop()
 
-            start = time.time()
-
+            
             # initialising the variables
-            visibility = 1/self.distance 
+            visibility = 1/self.distance # computational visibility
+
+            #cities_containing_ants = np.nonzero(self.ants_on_city)[0]  # cities containing ants 
 
             path_lengths = np.zeros(self.m)
+            #path_lengths = np.zeros(np.size(cities_containing_ants))
             
             shortestTour = 99999999999999999
             shortestPath = np.zeros(self.N, int)
@@ -378,10 +390,14 @@ class TCProblem:
 
             isTrue = True
 
+            start = time.time()
+
             while(isTrue):
 
                 # for each city
                 for city in range(self.N):
+                # for each city containing ants
+                #for city in cities_containing_ants: 
 
                     # number of ants in the city
                     N_ants = self.ants_on_city[city]
@@ -435,16 +451,19 @@ class TCProblem:
                             j=i
 
                         # computing total path length for the ant
-                        path_lengths[ant] = compute_path_length(path, city)
+                        path_lengths[ant] = compute_path_length(path, start=city)
 
                         # updating total_pheromoneDrop
                         total_pheromoneDrop += ant_pheromoneDrop/path_lengths[ant]
                     
                     # updating the shortest tour
-                    tour = np.min(path_lengths[np.nonzero(path_lengths)])
-                    if tour < shortestTour:
-                        shortestTour = tour
-                        shortestPath = path
+                    if N_ants != 0:
+                        tour = np.min(path_lengths[np.nonzero(path_lengths)])
+                        if tour < shortestTour:
+                            shortestTour = tour
+                            shortestPath = path
+                            print(shortestTour)
+                    
                 
                 # computing new pheromone distribution matrix
                 self.pheromone = ((1-self.p)*self.pheromone) + total_pheromoneDrop
@@ -461,12 +480,18 @@ class TCProblem:
             self.results.shortestTour = shortestTour
         
         # body of solve()
+        
+        print('Starting the algorithm...')
 
         # initializing the algorithm
         initialize()
 
+        print('Loop...')
+
         # loop
         loop()
+
+        print('End')
 
 
     

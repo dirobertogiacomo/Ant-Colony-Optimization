@@ -11,7 +11,7 @@ data = np.loadtxt('berlin52.txt', usecols = (1,2), dtype = int)
 berlin52 = ACO.TCProblem(data, 'EUC_2D')
 
 # genero la colonia
-berlin52.antColony(0.7, 0.7, 0.5, 60)
+berlin52.antColony(0.7, 0.7, 0.5, 10)
 
 # setto la condizione di stop
 berlin52.set_stop_condition('TIME', 5)
@@ -24,6 +24,8 @@ shortestPath = berlin52.results.shortestPath
 print(berlin52.results.shortestPath)
 print(berlin52.results.shortestTour)
 print(berlin52.results.iter)
+
+print(berlin52.ants_on_city)
 
 for i in range(len(shortestPath)-1):
     currentCity = shortestPath[i]
