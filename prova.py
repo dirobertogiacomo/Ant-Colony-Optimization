@@ -1,13 +1,16 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import sys
+def progressbar(it, prefix="", size=60, out=sys.stdout): # Python3.3+
+    count = len(it)
+    def show(j):
+        x = int(size*j/count)
+        print("{}[{}{}] {}/{}".format(prefix, "#"*x, "."*(size-x), j, count), 
+                end='\r', file=out, flush=True)
+    show(0)
+    for i, item in enumerate(it):
+        yield item
+        show(i+1)
+    print("\n", flush=True, file=out)
 
-distance = np.array([[999,3,6,2,3],[3,999,5,2,3],[6,5,999,6,4],[2,2,6,999,6],[3,3,4,6,999]])
-
-TYPE_MATRIX = ['EXPLICIT', 'EUC_2D']
-
-pluto = 'EXPLICIT'
-
-if pluto in TYPE_MATRIX:
-    print('ciao')
-else:
-    print('cacca')
+import time    
+for i in progressbar(range(100), "Computing: ", 50):
+    pass
