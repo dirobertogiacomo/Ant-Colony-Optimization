@@ -6,7 +6,6 @@ Giacomo Di Roberto, March 2023, version 1.2
 import numpy as np
 import random as rd
 import time
-#import matplotlib.pyplot as plt
 
 # constats
 STOP_CONDITION = ['ITER', 'TIME']
@@ -168,7 +167,7 @@ class TCProblem:
         self.beta = None
         self.p = None
         self.m = None
-        self.Q = None
+        self.Q = 1
     
             
     def set_stop_condition(self, condition_type: str, condition_value: int) -> None:
@@ -382,17 +381,12 @@ class TCProblem:
 
             while(isTrue):
 
-                # for each city
-                #for city in range(self.N):
                 idx = 0
                 # for each city containing ants
                 for city in cities_containing_ants: 
 
                     # number of ants in the city
                     N_ants = self.ants_on_city[city]
-
-                    # for each ant in the city
-                    #for ant in range(N_ants):
 
                     # creating the initial filter array
                     not_allowed_cities = [False]*self.N
@@ -402,7 +396,6 @@ class TCProblem:
                     path = np.zeros(self.N, int)
                     path[self.N - 1] = city
                     
-
                     # preallocating ant_pheromoneDrop
                     ant_pheromoneDrop = np.zeros((self.N, self.N))
                     
@@ -435,29 +428,25 @@ class TCProblem:
                     # computing ant_pheromoneDrop
                     j = city
                     for i in np.nditer(path):
-                        ant_pheromoneDrop[j, i] = 1
-                        ant_pheromoneDrop[i, j] = 1
+                        ant_pheromoneDrop[j, i] = self.Q
+                        ant_pheromoneDrop[i, j] = self.Q
                         j=i
 
                     # computing total path length for the ant
-                    #path_lengths[ant] = compute_path_length(path, start=city)
                     path_lengths[idx] = compute_path_length(path, start=city)
 
                     # updating total_pheromoneDrop
-                    #total_pheromoneDrop += (ant_pheromoneDrop/path_lengths[ant])*N_ants
                     total_pheromoneDrop += (ant_pheromoneDrop/path_lengths[idx])*N_ants
                     
                     # updating the shortest tour
-                    #if N_ants != 0:
                     tour = np.min(path_lengths[np.nonzero(path_lengths)])
                     if tour < shortestTour:
                         shortestTour = tour
                         shortestPath = path
-                        #print(shortestTour)
+                        print(shortestTour)
 
                     idx += 1
                     
-                
                 # computing new pheromone distribution matrix
                 self.pheromone = ((1-self.p)*self.pheromone) + total_pheromoneDrop
 
@@ -489,6 +478,5 @@ class TCProblem:
         loop()
 
         print('100% Complete\n')
-
 
     
