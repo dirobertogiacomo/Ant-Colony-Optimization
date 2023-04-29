@@ -48,7 +48,7 @@ class TCProblem:
         Array containing the number of ants for each city
 
     results : class
-        Subclass to store the results and plot the graphs
+        Subclass to store the results
 
     alpha : float
         Parameter to control the weight of the pheromone
@@ -57,7 +57,7 @@ class TCProblem:
         Parameter to control the weight of the heuristic visibility
 
     p : float
-        Parameter to control the pheromone decay
+        Parameter to control the pheromone decay. Must be a number 0 < p < 1
 
     m : int
         Number of ants
@@ -203,7 +203,7 @@ class TCProblem:
             Parameter to control the weight of the heuristic visibility
 
         p : float
-            Parameter to control the pheromone decay
+            Parameter to control the pheromone decay. Must be a number 0 < p < 1
 
         m : int
             Number of ants
