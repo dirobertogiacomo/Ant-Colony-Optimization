@@ -1,7 +1,7 @@
 """
-Description of the module
+This module provides a class to solve TCP problem with ACO algorithm.
 
-Giacomo Di Roberto, March 2023, version 1.2
+Giacomo Di Roberto, April 2023, version 1.3
 """
 import numpy as np
 import random as rd

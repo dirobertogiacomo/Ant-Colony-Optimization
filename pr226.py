@@ -18,7 +18,7 @@ error = [None]*N
 pr226 = ACO.TCProblem(data, 'EUC_2D')
 
 # ant colony
-pr226.antColony(2, 2, 0.1, 10)
+pr226.antColony(3.5, 3.5, 0.2, 30)
 
 # set stop condition
 pr226.set_stop_condition('ITER', 150)
